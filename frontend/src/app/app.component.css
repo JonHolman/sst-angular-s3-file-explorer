@@ -1,0 +1,13 @@
+.App {
+  display: grid;
+  place-content: center;
+}
+p {
+  margin-top: 0;
+  font-size: 20px;
+}
+button {
+  cursor: pointer;
+  margin-bottom: 10px;
+  float:right;
+}

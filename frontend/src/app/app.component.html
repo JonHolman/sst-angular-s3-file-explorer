@@ -1,0 +1,9 @@
+<amplify-authenticator>
+  <ng-template amplifySlot="authenticated" let-user="user" let-signOut="signOut">
+    <button (click)="signOut()">Sign Out</button>
+    <div class="App">
+      <p>signed in as {{ user.attributes.email }}</p>
+      <app-s3-view></app-s3-view>
+    </div>
+  </ng-template>
+</amplify-authenticator>

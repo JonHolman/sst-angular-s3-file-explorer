@@ -1,0 +1,5 @@
+{
+  "name": "sst-angular-s3-file-explorer",
+  "region": "us-east-1",
+  "main": "stacks/index.js"
+}

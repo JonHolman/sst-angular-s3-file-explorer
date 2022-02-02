@@ -1,0 +1,48 @@
+
+table {
+  table-layout: fixed;
+}
+
+th, td {
+  width: 200px;
+  padding-right: 70px!important;
+}
+
+th.size, td.size {
+  width: 100px;
+}
+
+th.actions, td.actions {
+  width: 220px;
+}
+
+button {
+  cursor: pointer;
+  margin-right: 7px;
+  height: 26px;
+  line-height: 20px;
+}
+
+span.breadcrumb {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+td.keys {
+  cursor: pointer;
+}
+
+div.previewPane {
+  margin-top: 10px;
+  border: 1px solid;
+  width: 400px;
+  text-align: center;
+  text-decoration: underline;
+}
+
+div#previewPaneLeft {
+  float: left;
+}
+div#previewPaneRight {
+  float: right;
+}
