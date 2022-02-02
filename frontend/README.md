@@ -5,8 +5,8 @@ This is a demo angular SST app I created to show the capabilities of SST (and AW
 Used this as my starting point: https://github.com/Manitej66/serverless-stack/tree/angular-app/examples/angular-app
 
 With inspiration from:
-https://github.com/awslabs/aws-js-s3-explorer/tree/v2-alpha
-https://github.com/sw-yx/demo-amplify-storage-file-upload
+- https://github.com/awslabs/aws-js-s3-explorer/tree/v2-alpha
+- https://github.com/sw-yx/demo-amplify-storage-file-upload
 
 Also removed the API Gateway and Lambda to show that this functionality can be delivered with only Cognito, Amplify, and S3.
 
