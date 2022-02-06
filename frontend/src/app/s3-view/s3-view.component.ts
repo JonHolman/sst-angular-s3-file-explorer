@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Storage } from "aws-amplify";
-import { Observable, from } from 'rxjs';
+import { Observable, from, firstValueFrom } from 'rxjs';
 import { config } from '../../config';
+import { HttpClient } from "@angular/common/http";
 
 class s3Object {
     eTag?: string | undefined;
@@ -24,6 +25,8 @@ export class S3ViewComponent implements OnInit {
     previewImageUrl = '';
     previewTextUrl = '';
     uploadStatus = '';
+
+    constructor(private http: HttpClient) { }
 
     ngOnInit(): void {
         this.refreshS3Contents()
@@ -52,33 +55,27 @@ export class S3ViewComponent implements OnInit {
         } else {
             const key = this.currentFolder + elem.key
 
-            Storage.get(key).then(item => {
+            Storage.get(key).then(async item => {
 
                 // set the key to be displayed above the preview
                 this.previewObjectKeyLeft = key;
 
                 // Doing a small get request using the range header to find out the content-type, the pre-signed URL does not work for HEAD requests.
-                const ajax = new XMLHttpRequest()
-                ajax.open('GET', item);
-                ajax.setRequestHeader('Range', 'bytes=0-1');
-                ajax.onreadystatechange = () => {
-                    if (ajax.readyState == ajax.DONE) {
-                        const fileContentType = ajax.getResponseHeader('content-type');
-                        switch (fileContentType) {
-                            case 'image/png':
-                            case 'image/jpeg':
-                                // code block
-                                this.previewImageUrl = item;
-                                break;
-                            case 'y':
-                                // code block
-                                break;
-                            default:
-                                alert('No preview yet for ' + fileContentType)
-                        }
-                    }
-                };
-                ajax.send();
+                const data = await firstValueFrom(this.http.get(item, { responseType: 'blob', headers: { 'Range': 'bytes=0-1' } }));
+                const fileContentType = data.type;
+                switch (fileContentType) {
+                    case 'image/png':
+                    case 'image/jpeg':
+                        // code block
+                        this.previewImageUrl = item;
+                        break;
+                    case 'y':
+                        // code block
+                        break;
+                    default:
+                        alert('No preview yet for ' + fileContentType)
+                }
+
             })
         }
         this.refreshS3Contents();

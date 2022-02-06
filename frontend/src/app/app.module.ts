@@ -4,10 +4,11 @@ import { AmplifyAuthenticatorModule } from "@aws-amplify/ui-angular";
 import { AppComponent } from "./app.component";
 import { S3ViewComponent } from "./s3-view/s3-view.component";
 import { MatTableModule } from "@angular/material/table";
+import { HttpClientModule } from "@angular/common/http";
 
 @NgModule({
     declarations: [AppComponent, S3ViewComponent],
-    imports: [BrowserModule, AmplifyAuthenticatorModule, MatTableModule],
+    imports: [BrowserModule, AmplifyAuthenticatorModule, MatTableModule, HttpClientModule],
     providers: [],
     bootstrap: [AppComponent],
 })
