@@ -1,6 +1,6 @@
 # sst-angular-s3-file-explorer - backend
 
-This is a demo angular SST app I created to show the capabilities of SST (and AWS CDK) and the AWS Amplify JS Library
+This is a demo angular [SST](https://serverless-stack.com/) app I created to show the capabilities of SST (and AWS CDK) and the [AWS Amplify JS Library](https://docs.amplify.aws/lib/q/platform/js/)
 
 Used this as my starting point: https://github.com/Manitej66/serverless-stack/tree/angular-app/examples/angular-app
 
