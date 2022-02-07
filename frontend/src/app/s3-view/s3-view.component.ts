@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Storage } from "aws-amplify";
-import { Observable, from, firstValueFrom } from 'rxjs';
+import { Observable, firstValueFrom, of } from 'rxjs';
 import { config } from '../../config';
 import { HttpClient } from "@angular/common/http";
 
@@ -39,7 +39,7 @@ export class S3ViewComponent implements OnInit {
         this.previewTextUrl = '';
     }
 
-    objectClick(elem: s3Object) {
+    async objectClick(elem: s3Object) {
         // clear previous previews
         this.clearPreviews();
 
@@ -55,19 +55,20 @@ export class S3ViewComponent implements OnInit {
         } else {
             const key = this.currentFolder + elem.key
 
-            Storage.get(key).then(async item => {
+            try {
+                const presignedUrl = await Storage.get(key);
 
                 // set the key to be displayed above the preview
                 this.previewObjectKeyLeft = key;
 
                 // Doing a small get request using the range header to find out the content-type, the pre-signed URL does not work for HEAD requests.
-                const data = await firstValueFrom(this.http.get(item, { responseType: 'blob', headers: { 'Range': 'bytes=0-1' } }));
+                const data = await firstValueFrom(this.http.get(presignedUrl, { responseType: 'blob', headers: { 'Range': 'bytes=0-1' } }));
                 const fileContentType = data.type;
                 switch (fileContentType) {
                     case 'image/png':
                     case 'image/jpeg':
                         // code block
-                        this.previewImageUrl = item;
+                        this.previewImageUrl = presignedUrl;
                         break;
                     case 'y':
                         // code block
@@ -75,46 +76,53 @@ export class S3ViewComponent implements OnInit {
                     default:
                         alert('No preview yet for ' + fileContentType)
                 }
-
-            })
+            } catch (err) {
+                console.log('Error retrieving presigned URL for preview:', err)
+            }
         }
         this.refreshS3Contents();
     }
 
-    refreshS3Contents() {
+    async refreshS3Contents() {
         // console.log('this.currentFolder:', this.currentFolder)
-        this.s3Contents = from(Storage.list(this.currentFolder)
-            .then(item => {
-                // console.log('item:', item)
-                const { files, folders } = this.processStorageList(item);
 
-                // console.log('files:', files);
-                // console.log('folders:', folders);
+        try {
+            const items = await Storage.list(this.currentFolder);
 
-                let displayFolders: s3Object[] = [];
-                if (this.currentFolder !== '')
-                    displayFolders.push({ key: '..', folder: true })
-                displayFolders = displayFolders.concat(folders.map(folder => ({ key: <string>folder, folder: true })));
+            // console.log('item:', item)
+            const { files, folders } = this.processStorageList(items);
 
-                return displayFolders.concat(files);
-            })
-            .catch(err => {
-                console.log('Error:', err);
-                return [];
-            }
-            ));
+            // console.log('files:', files);
+            // console.log('folders:', folders);
+
+            let displayFolders: s3Object[] = [];
+            if (this.currentFolder !== '')
+                displayFolders.push({ key: '..', folder: true })
+            displayFolders = displayFolders.concat(folders.map(folder => ({ key: <string>folder, folder: true })));
+
+            this.s3Contents = of(displayFolders.concat(files))
+        } catch (err) {
+            console.log('Error:', err);
+            this.s3Contents = of([])
+        }
     }
 
-    renameFile(elem: s3Object) {
+    async renameFile(elem: s3Object) {
         const currentKey = this.currentFolder + elem.key
         const newFileKey = prompt('Enter new key for ' + currentKey, currentKey);
 
         // copy object to the new key, then remove the old object
-        Storage.copy({ key: currentKey }, { key: <string>newFileKey }).then(() => {
-            Storage.remove(currentKey).then(() => {
+        try {
+            await Storage.copy({ key: currentKey }, { key: <string>newFileKey })
+            try {
+                await Storage.remove(currentKey)
                 this.refreshS3Contents();
-            }).catch(err => console.log('Error removing old file:', err));
-        }).catch(err => console.log('Error creating new file:', err));
+            } catch (err) {
+                console.log('Error removing old file:', err)
+            }
+        } catch (err) {
+            console.log('Error creating new file:', err)
+        }
     }
 
     getBreadcrumbs() {
@@ -132,10 +140,16 @@ export class S3ViewComponent implements OnInit {
         this.refreshS3Contents();
     }
 
-    createFolder() {
+    async createFolder() {
         const newFolderName = prompt('Enter name for the new folder: ');
-        if (newFolderName)
-            Storage.put(this.currentFolder + newFolderName + '/', '',).then(() => this.refreshS3Contents()).catch(err => console.log('Error creating folder:', err));
+        if (newFolderName) {
+            try {
+                await Storage.put(this.currentFolder + newFolderName + '/', '',)
+                this.refreshS3Contents()
+            } catch (err) {
+                console.log('Error creating folder:', err)
+            }
+        }
     }
 
     // originally from: https://docs.amplify.aws/lib/storage/list/q/platform/js/
@@ -150,7 +164,7 @@ export class S3ViewComponent implements OnInit {
                     item.key = item.key?.replace(this.currentFolder, '')
                     files.push(item)
                 }
-                // sometimes files declare a folder with a / within then
+                // sometimes files declare a folder with a / within the key
                 possibleFolder = res.key?.split('/').slice(0, -1).join('/')
                 if (possibleFolder && possibleFolder.includes(this.currentFolder) && possibleFolder.replace(this.currentFolder, '').indexOf('/') == -1) {
                     // console.log('possibleFolder', possibleFolder)
@@ -175,22 +189,31 @@ export class S3ViewComponent implements OnInit {
         (<HTMLInputElement>document.getElementById('upload-file')).click();
     }
 
-    deleteObject(elem: s3Object) {
+    async deleteObject(elem: s3Object) {
         if (window.confirm(`Are you sure you want to delete the ${elem.folder ? 'folder' : 'file'} ${this.currentFolder + elem.key}?`)) {
             if (!elem.folder) {
-                Storage.remove(this.currentFolder + elem.key).then(() => this.refreshS3Contents()).catch(err => console.log('Error deleting file:', err));
+                try {
+                    await Storage.remove(this.currentFolder + elem.key)
+                    this.refreshS3Contents()
+                } catch (err) {
+                    console.log('Error deleting file:', err)
+                }
             } else {
-                Storage.list(this.currentFolder + elem.key + '/')
-                    .then(ls => {
-                        if (ls.length === 0 || (ls.length === 1 && ls[0].key === this.currentFolder + elem.key + '/')) {
-                            Storage.remove(this.currentFolder + elem.key + '/').then(() => this.refreshS3Contents()).catch(err => console.log('Error deleting folder:', err));
-                        } else {
-                            alert('directory is not empty, not deleting')
+                try {
+                    const ls = await Storage.list(this.currentFolder + elem.key + '/')
+                    if (ls.length === 0 || (ls.length === 1 && ls[0].key === this.currentFolder + elem.key + '/')) {
+                        try {
+                            await Storage.remove(this.currentFolder + elem.key + '/')
+                            this.refreshS3Contents()
+                        } catch (err) {
+                            console.log('Error deleting folder:', err)
                         }
-                    })
-                    .catch(err => {
-                        console.log('Error getting folder\'s directory listing:', err);
-                    });
+                    } else {
+                        alert('directory is not empty, not deleting')
+                    }
+                } catch (err) {
+                    console.log('Error getting folder\'s directory listing:', err);
+                }
             }
         }
     }
@@ -218,17 +241,20 @@ export class S3ViewComponent implements OnInit {
     }
 
     // help from https://github.com/sw-yx/demo-amplify-storage-file-upload/blob/main/src/DownloadButton.svelte
-    fileDownload(elem: s3Object) {
+    async fileDownload(elem: s3Object) {
         const foldersInPath = elem?.key?.split('/');
         if (foldersInPath) {
             const fileName: string = foldersInPath[foldersInPath.length - 1]
-            Storage.get(this.currentFolder + elem.key, { download: true }).then((res) => {
-                this.downloadBlob(<Blob>res.Body, fileName)
-            }).catch(err => console.log('Error downloading file:', err));
+            try {
+                const downloadResponse = await Storage.get(this.currentFolder + elem.key, { download: true });
+                this.downloadBlob(<Blob>downloadResponse.Body, fileName)
+            } catch (err) {
+                console.log('Error downloading file:', err)
+            }
         }
     }
 
-    fileUpload(event: Event) {
+    async fileUpload(event: Event) {
         const MAX_ATTACHMENT_SIZE: number = 10 * 1000 * 1000;
         const htmlInputElement: HTMLInputElement = (event.target as HTMLInputElement)
         const file: File = (htmlInputElement.files as FileList)[0];
@@ -241,12 +267,17 @@ export class S3ViewComponent implements OnInit {
         const key = this.currentFolder + file.name;
         // console.log('will create key ' + key)
 
-        Storage.put(key, file, {
-            progressCallback: (progress) => {
-                this.uploadStatus = `Uploading ${key} - ${Math.round((progress.loaded / progress.total) * 1000) / 10}% complete`
-                setTimeout(() => this.uploadStatus = '', 10000); // clear the message after 10 seconds
-            }, contentType: file.type
-        }).then(() => this.refreshS3Contents()).catch(err => console.log('Error uploading file:', err));
+        try {
+            await Storage.put(key, file, {
+                progressCallback: (progress) => {
+                    this.uploadStatus = `Uploading ${key} - ${Math.round((progress.loaded / progress.total) * 1000) / 10}% complete`
+                    setTimeout(() => this.uploadStatus = '', 10000); // clear the message after 10 seconds
+                }, contentType: file.type
+            })
+            this.refreshS3Contents()
+        } catch (err) {
+            console.log('Error uploading file:', err)
+        }
     }
 
     // original from: https://github.com/awslabs/aws-js-s3-explorer/blob/v2-alpha/explorer.js
