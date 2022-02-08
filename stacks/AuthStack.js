@@ -36,6 +36,15 @@ export default class AuthStack extends sst.Stack {
           bucket.bucketArn + "/*"
         ],
       }),
+      new iam.PolicyStatement({
+        actions: [
+          "rekognition:DetectText",
+          "textract:DetectDocumentText",
+          "translate:TranslateText",
+        ],
+        effect: iam.Effect.ALLOW,
+        resources: ['*'],
+      }),
     ]);
 
     // Show the auth resources in the output

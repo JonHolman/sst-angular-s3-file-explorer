@@ -48,11 +48,22 @@
   <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 </table>
 
-<div class="previewPane" id="previewPaneLeft" *ngIf="previewObjectKeyLeft">
+<div class="previewPane" *ngIf="previewObjectKeyLeft">
   <p>preview of <b>{{previewObjectKeyLeft}}</b></p>
-  <img width="300" [src]="previewImageUrl">
+  <img width="416" *ngIf="previewLeftImageUrl" [src]="previewLeftImageUrl">
+  <textarea disabled id="previewLeftText" *ngIf="previewLeftTextContent" cols=52>{{previewLeftTextContent}}</textarea>
 </div>
-
-<div class="previewPane" id="previewPaneRight" *ngIf="previewObjectKeyRight">
-  <p>preview of <b>{{previewObjectKeyRight}}</b></p>
+<div class="actions" *ngIf="previewObjectKeyLeft">
+  <button *ngIf="previewLeftImageUrl" (click)="clickOcrButton()">OCR Image</button>
+  <button id="translate-button" *ngIf="previewLeftTextContent" (click)="clickTranslateButton()">Translate to
+    Spanish</button>
+  <mat-spinner *ngIf="loading" [diameter]="50"></mat-spinner>
+</div>
+<div class="previewPane" *ngIf="previewRightTextContent">
+  <p>preview of <b>unsaved item</b></p>
+  <textarea disabled id="previewRightText" *ngIf="previewRightTextContent"
+    cols=52>{{previewRightTextContent}}</textarea>
+</div>
+<div class="actions" *ngIf="previewRightTextContent">
+  <button (click)="clickSaveButton()">Save</button>
 </div>

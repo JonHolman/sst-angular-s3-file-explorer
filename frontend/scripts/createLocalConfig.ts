@@ -7,12 +7,11 @@ const environmentFileContent =
     environment: "${process.env['ENVIRONMENT']}",
     MAX_ATTACHMENT_SIZE: 10000000,
     // Backend config
+    REGION: "${process.env['ANGULAR_APP_REGION']}",
     s3: {
-        REGION: "${process.env['ANGULAR_APP_REGION']}",
         BUCKET: "${process.env['ANGULAR_APP_BUCKET']}",
     },
     cognito: {
-        REGION: "${process.env['ANGULAR_APP_REGION']}",
         USER_POOL_ID: "${process.env['ANGULAR_APP_USER_POOL_ID']}",
         APP_CLIENT_ID: "${process.env['ANGULAR_APP_USER_POOL_CLIENT_ID']}",
         IDENTITY_POOL_ID: "${process.env['ANGULAR_APP_IDENTITY_POOL_ID']}",

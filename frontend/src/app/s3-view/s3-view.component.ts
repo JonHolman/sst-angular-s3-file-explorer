@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Storage } from "aws-amplify";
+import { Storage, Predictions } from "aws-amplify";
 import { Observable, firstValueFrom, of } from 'rxjs';
 import { config } from '../../config';
 import { HttpClient } from "@angular/common/http";
@@ -21,10 +21,12 @@ export class S3ViewComponent implements OnInit {
     currentFolder = '';
     s3Contents!: Observable<s3Object[]>;
     previewObjectKeyLeft = '';
-    previewObjectKeyRight = '';
-    previewImageUrl = '';
+    previewLeftImageUrl = '';
     previewTextUrl = '';
+    previewLeftTextContent = '';
+    previewRightTextContent = '';
     uploadStatus = '';
+    loading = false;
 
     constructor(private http: HttpClient) { }
 
@@ -34,9 +36,10 @@ export class S3ViewComponent implements OnInit {
 
     clearPreviews() {
         this.previewObjectKeyLeft = '';
-        this.previewObjectKeyRight = '';
-        this.previewImageUrl = '';
+        this.previewLeftImageUrl = '';
         this.previewTextUrl = '';
+        this.previewLeftTextContent = '';
+        this.previewRightTextContent = '';
     }
 
     async objectClick(elem: s3Object) {
@@ -67,11 +70,15 @@ export class S3ViewComponent implements OnInit {
                 switch (fileContentType) {
                     case 'image/png':
                     case 'image/jpeg':
-                        // code block
-                        this.previewImageUrl = presignedUrl;
+                        this.previewLeftImageUrl = presignedUrl;
                         break;
-                    case 'y':
-                        // code block
+                    case 'text/plain':
+                        try {
+                            const downloadResponse = await Storage.get(key, { download: true });
+                            this.previewLeftTextContent = await (<Blob>downloadResponse.Body).text()
+                        } catch (err) {
+                            console.log('Error getting file\'s content:', err)
+                        }
                         break;
                     default:
                         alert('No preview yet for ' + fileContentType)
@@ -291,4 +298,39 @@ export class S3ViewComponent implements OnInit {
     }
 
     displayedColumns: string[] = ['key', 'size', 'lastModified', 'actions'];
+
+    async clickOcrButton() {
+        try {
+            this.loading = true
+            const ocrResults = await Predictions.identify({ text: { source: { key: this.previewObjectKeyLeft } } })
+            this.loading = false
+            this.previewRightTextContent = ocrResults.text.lines.join('\n');
+        } catch (err) {
+            console.log('Error running OCR on file:', err)
+        }
+    }
+
+    async clickSaveButton() {
+        const newFileKey = prompt('Enter key to save this object:', '');
+        if (newFileKey) {
+            try {
+                await Storage.put(newFileKey, this.previewRightTextContent, { contentType: "text/plain" })
+                this.clearPreviews();
+                this.refreshS3Contents()
+            } catch (err) {
+                console.log('Error creating new file:', err)
+            }
+        }
+    }
+
+    async clickTranslateButton() {
+        try {
+            this.loading = true
+            const translateResults = await Predictions.convert({ translateText: { source: { text: this.previewLeftTextContent, language: "en" }, targetLanguage: "es" } })
+            this.loading = false
+            this.previewRightTextContent = translateResults.text;
+        } catch (err) {
+            console.log('Error translating text:', err)
+        }
+    }
 }

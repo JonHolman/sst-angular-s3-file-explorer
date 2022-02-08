@@ -23,6 +23,10 @@ button {
   line-height: 20px;
 }
 
+button#translate-button {
+  height: 52px;
+}
+
 span.breadcrumb {
   cursor: pointer;
   text-decoration: underline;
@@ -33,16 +37,26 @@ td.keys {
 }
 
 div.previewPane {
+  float: left;
   margin-top: 10px;
   border: 1px solid;
-  width: 400px;
   text-align: center;
   text-decoration: underline;
 }
 
-div#previewPaneLeft {
+div.previewPane img, div.previewPane textarea {
+  height: 480px;
+  width: 416px;
+}
+
+div.actions {
+  margin-top: 10px;
+  margin-left: 10px;
+  width: 100px;
   float: left;
 }
-div#previewPaneRight {
-  float: right;
+
+div.actions mat-spinner {
+  margin-left:auto;
+  margin-right:auto;
 }
