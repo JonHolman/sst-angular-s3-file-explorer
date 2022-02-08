@@ -37,6 +37,7 @@ td.keys {
 }
 
 div.previewPane {
+  width: 418px;
   float: left;
   margin-top: 10px;
   border: 1px solid;
