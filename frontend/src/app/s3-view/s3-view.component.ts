@@ -143,6 +143,7 @@ export class S3ViewComponent implements OnInit {
     }
 
     jumpToFolder(dest: string) {
+        this.clearPreviews();
         this.currentFolder = dest;
         this.refreshS3Contents();
     }
