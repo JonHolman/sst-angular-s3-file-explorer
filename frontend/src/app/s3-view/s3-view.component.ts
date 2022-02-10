@@ -312,7 +312,7 @@ export class S3ViewComponent implements OnInit {
     }
 
     async clickSaveButton() {
-        const newFileKey = prompt('Enter key to save this object:', '');
+        const newFileKey = prompt('Enter key to save this object:', this.currentFolder);
         if (newFileKey) {
             try {
                 await Storage.put(newFileKey, this.previewRightTextContent, { contentType: "text/plain" })
