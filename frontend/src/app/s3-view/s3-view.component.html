@@ -40,7 +40,7 @@
     <td mat-cell class="actions" *matCellDef="let element">
       <button mat-raised-button (click)="fileDownload(element)" *ngIf="!element.folder">Download</button>
       <button mat-raised-button (click)="renameFile(element)" *ngIf="!element.folder">Rename</button>
-      <button mat-raised-button (click)="deleteObject(element)">Delete</button>
+      <button mat-raised-button (click)="deleteObject(element)" *ngIf="element.key !== '..'">Delete</button>
     </td>
   </ng-container>
 
