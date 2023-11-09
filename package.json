@@ -17,7 +17,7 @@
   "dependencies": {
     "@serverless-stack/cli": "1.18.4",
     "@serverless-stack/resources": "1.18.4",
-    "aws-cdk-lib": "2.80.0",
+    "aws-cdk-lib": "2.81.0",
     "aws-sdk": "^2.1368.0"
   }
 }
